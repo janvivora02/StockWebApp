@@ -1,0 +1,59 @@
+﻿
+@{
+    ViewData["Title"] = "Gainers";
+}
+@model IEnumerable<StockWebApp.Models.EF_Models.CompanyList>
+<div class="text-center">
+    <h1 class="display-4">Top 10 Gainers</h1>
+</div>
+
+<hr />
+<table class="table">
+    <thead>
+        <tr>
+            <th> Symbol </th>
+            <th> Name </th>
+            <th> Primary Exchange </th>
+            <th> Sector </th>
+            <th> Open </th>
+            <th> Close </th>
+            <th> High </th>
+            <th> Low </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.symbol)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.companyName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.primaryExchange)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.sector)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.open)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.close)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.high)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.low)
+            </td>
+        </tr>
+        }
+        @{
+            Model.Count();
+        }
+    </tbody>
+</table>
+

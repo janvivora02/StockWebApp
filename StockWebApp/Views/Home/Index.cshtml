@@ -1,8 +1,54 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
-
+@model IEnumerable<StockWebApp.Models.EF_Models.Company>
 <div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <h1 class="display-4">Companies</h1>
 </div>
+
+<hr />
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Symbol
+            </th>
+            <th>
+                Name
+            </th>
+            <th>
+                Date
+            </th>
+            <th>
+                Type
+            </th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.symbol)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.name)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.date)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.type)
+                </td>
+            </tr>
+        }
+        @{
+            Model.Count();
+        }
+    </tbody>
+</table>
+<tr>
+    <td>
+        <a id="dbopt" asp-controller="Home" asp-action="PopulateSymbols">Save Companies</a>
+    </td>
+</tr>

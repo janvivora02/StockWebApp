@@ -1,0 +1,23 @@
+﻿
+@{
+    ViewData["Title"] = "News";
+}
+
+@model IEnumerable<StockWebApp.Models.EF_Models.NewsData>
+
+<div class="text-center">
+    <h1 class="display-4">News</h1>
+</div>
+
+<hr />
+
+@foreach (var item in Model)
+{
+    <div class="news-div">
+        <h2>@Html.DisplayFor(modelItem => item.headline)</h2>
+        <p>@Html.DisplayFor(modelItem => item.summary)</p>
+    </div>
+}
+@{
+    Model.Count();
+}

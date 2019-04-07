@@ -5,20 +5,146 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using StockWebApp.Models;
+// ADD THESE DIRECTIVES
+using StockWebApp.DataAccess;
+using Newtonsoft.Json;
+using System.Net.Http;
+using static StockWebApp.Models.EF_Models;
 
 namespace StockWebApp.Controllers
 {
     public class HomeController : Controller
     {
-        public IActionResult Index()
+        /*
+            These lines are needed to use the Database context,
+            define the connection to the API, and use the
+            HttpClient to request data from the API
+        */
+        public ApplicationDbContext dbContext;
+        //Base URL for the IEXTrading API. Method specific URLs are appended to this base URL.
+        string BASE_URL = "https://api.iextrading.com/1.0/";
+        HttpClient httpClient;
+
+        /*
+           These lines create a Constructor for the HomeController.
+           Then, the Database context is defined in a variable.
+           Then, an instance of the HttpClient is created.
+      */
+        public HomeController(ApplicationDbContext context)
         {
-            return View();
+            dbContext = context;
+
+            httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Accept.Add(new
+                System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public IActionResult Privacy()
+        /*
+            Calls the IEX reference API to get the list of symbols.
+            Returns a list of the companies whose information is available. 
+        */
+        public List<Company> GetSymbols()
         {
-            return View();
+            string IEXTrading_API_PATH = BASE_URL + "ref-data/symbols";
+            string companyList = "";
+            List<Company> companies = null;
+
+            // connect to the IEXTrading API and retrieve information
+            httpClient.BaseAddress = new Uri(IEXTrading_API_PATH);
+            HttpResponseMessage response = httpClient.GetAsync(IEXTrading_API_PATH).GetAwaiter().GetResult();
+
+            // read the Json objects in the API response
+            if (response.IsSuccessStatusCode)
+            {
+                companyList = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            }
+
+            // now, parse the Json strings as C# objects
+            if (!companyList.Equals(""))
+            {
+                // https://stackoverflow.com/a/46280739
+                companies = JsonConvert.DeserializeObject<List<Company>>(companyList);
+                companies = companies.GetRange(0, 50);
+            }
+
+            return companies;
         }
+
+        public IActionResult Index()
+        {
+            //Set ViewBag variable first
+            ViewBag.dbSuccessComp = 0;
+            List<Company> companies = GetSymbols();
+
+            //Save companies in TempData, so they do not have to be retrieved again
+            TempData["Companies"] = JsonConvert.SerializeObject(companies);
+
+            return View(companies);
+        }
+        /*
+            Save the available symbols in the database
+        */
+        public IActionResult PopulateSymbols()
+        {
+            // Retrieve the companies that were saved in the symbols method
+            List<Company> companies = JsonConvert.DeserializeObject<List<Company>>(TempData["Companies"].ToString());
+
+            foreach (Company company in companies)
+            {
+                //Database will give PK constraint violation error when trying to insert record with existing PK.
+                //So add company only if it doesnt exist, check existence using symbol (PK)
+                if (dbContext.Companies.Where(c => c.symbol.Equals(company.symbol)).Count() == 0)
+                {
+                    dbContext.Companies.Add(company);
+                }
+            }
+
+            dbContext.SaveChanges();
+            ViewBag.dbSuccessComp = 1;
+            return View("Index", companies);
+        }
+
+        public IActionResult Gainers()
+        {
+            //Set ViewBag variable first
+            ViewBag.dbSuccessComp = 0;
+            List<CompanyList> gainers = GetGainers();
+
+            //Save companies in TempData, so they do not have to be retrieved again
+            TempData["Gainers"] = JsonConvert.SerializeObject(gainers);
+
+            return View(gainers);
+        }
+
+        /*
+           Calls the IEX reference API to get the list of symbols.
+           Returns a list of the top 10 gainer companies whose information is available. 
+       */
+        public List<CompanyList> GetGainers()
+        {
+            string IEXTrading_API_PATH = BASE_URL + "stock/market/list/gainers";
+            string gainersList = "";
+            List<CompanyList> gainers = null;
+
+            // connect to the IEXTrading API and retrieve information
+            httpClient.BaseAddress = new Uri(IEXTrading_API_PATH);
+            HttpResponseMessage response = httpClient.GetAsync(IEXTrading_API_PATH).GetAwaiter().GetResult();
+
+            // read the Json objects in the API response
+            if (response.IsSuccessStatusCode)
+            {
+                gainersList = response.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+            }
+
+            // now, parse the Json strings as C# objects
+            if (!gainersList.Equals(""))
+            {
+                gainers = JsonConvert.DeserializeObject<List<CompanyList>>(gainersList, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+            }
+            return gainers;
+        }
+
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
